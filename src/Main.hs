@@ -110,7 +110,7 @@ showHelp = mapM_ putStrLn [
       , "Where <cols> is the number of columns to wrap to in the output, e.g.:"
       , " - 80 columns/line at 1/10\" (2.54mm) for a 6.6 inch print line width"
       , " - 66 columns/line at 1/12\" (2.12mm) for a 6.6 inch print line width"
-  ]
+    ]
 
 magick :: Int -> IO ()
 magick cs = do
