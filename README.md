@@ -12,6 +12,8 @@ For the story behind why I wrote this, read my blog post series [Daisy Wheel Dia
 
 This is just a plain Cabal package. `cabal build` and you're done.
 
+Note that BBCode630 requires [`text-icu`](https://hackage.haskell.org/package/text-icu) in order to do Unicode normalisation for diacritic replacement, and `text-icu` needs to have ICU available. If you're having trouble installing it on OS X, see [this StackOverflow answer](http://stackoverflow.com/questions/16618272/installing-text-icu-on-mac-osx-with-cabal).
+
 ## Usage
 
 Make a UTF-8 text file with the page you want to print. You can use `[b]` and `[u]` for bold and underline formatting. For the most part, only ASCII characters work, but there are some exceptions: see "Character replacements" below. Your file doesn't need to be wrapped to 80 columns, this will be done for you by the Diablo630.
@@ -54,5 +56,11 @@ These ones will probably cause trouble on other Diablo 630-like printers.
 
 These are probably fine on non-LetterMaster printers.
 
-There aren't any of these yet, but some might be added in future. What would these be? Well, we can approximate certain accented characters with overstriking, and add these as replacements. For example, we could replace è with e overstriked with \`.
+These give you enough diacritics to write most French, German (if you get rid of ß) or Spanish words. Note that precomposed characters (e.g. ü, U+00FC LATIN SMALL LETTER U WITH DIAERESIS) work too; BBCode630 performs a Unicode NFKD normalisation pass before processing input, which decomposes precomposed characters into diacritics and base letters. 
 
+*  ̀ (**U+0300 COMBINING GRAVE ACCENT**) - Replaced with overstriking \`
+*  ́ (**U+0301 COMBINING ACUTE ACCENT**) - Replaced with overstriking '
+*  ̂ (**U+0302 COMBINING CIRCUMFLEX ACCENT**) - Replaced with overstriking ^
+*  ̃ (**U+0303 COMBINING TILDE**) - Replaced with overstriking ~
+*  ̈ (**U+0308 COMBINING DIAERESIS**) - Replaced with overstriking "
+*  ̧ (**U+0327 COMBINING CEDILLA**) - Replaced with overstriking ,

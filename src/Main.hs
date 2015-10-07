@@ -2,7 +2,17 @@ import Data.Functor ((<$>))
 import Data.Char (isSpace, isAscii)
 import Data.Maybe (fromMaybe)
 import Data.List (intersperse)
+import Data.Text (pack, unpack)
+import Data.Text.ICU.Normalize (normalize, NormalizationMode(NFKD))
 import System.Environment (getArgs)
+
+-- Perform Unicode NFKD normalisation, which breaks down composed characters
+-- Thus, things like 'ü' (U+00FC) become 'u' and ' ̈'
+-- Decomposition means we can avoid having to handle all the different
+-- possible diacritic-character composed characters, i.e. we only need to
+-- handle ' ̈' once, rather than 'ä', 'ö', 'ü', 'ï', 'ë', etc.
+decompose :: String -> String
+decompose = unpack . normalize NFKD . pack
 
 type Column = Int
 
@@ -94,6 +104,24 @@ escape ('½':cs)     = '}' : escape cs
 -- Overstriking is achieved with ASCII BS (\x08), backspace.
 escape ('{':cs)     = '(' : '\BS' : '[' : '\BS' : '-' : escape cs
 escape ('}':cs)     = ')' : '\BS' : ']' : '\BS' : '-' : escape cs
+-- Some characters ASCII lacks can be adequately recreated with overstriking
+-- The following accents are written with an escape sequence
+-- This is so they won't visually combine with the quote mark
+-- This is not an exhaustive list of accents, it's just what's needed for
+-- French ( ̀,  ́,  ̂,  ̈,  ̧), German ( ̈) and Spanish ( ̃,  ́), which roughly match
+-- what ASCII can actually achieve anyway
+-- U+0300 COMBINING GRAVE ACCENT ( ̀) looks similar to a backtick (`)
+escape ('\x0300':cs)    = '\BS' : '`' : escape cs
+-- U+0301 COMBINING ACUTE ACCENT ( ́) may look similar to a single quote (')
+escape ('\x0301':cs)    = '\BS' : '\'' : escape cs
+-- U+0302 COMBINING CIRCUMFLEX ACCENT ( ̂) looks similar to a caret (^)
+escape ('\x0302':cs)    = '\BS' : '^' : escape cs
+-- U+0303 COMBINING TILDE ( ̃) is, well, a tilde (~)
+escape ('\x0303':cs)    = '\BS' : '~' : escape cs
+-- U+0308 COMBINING DIAERESIS ( ̈) looks similar to a double-quote (")
+escape ('\x0308':cs)    = '\BS' : '"' : escape cs
+-- U+0327 COMBINING CEDILLA ( ̧) looks similar to a comma (,)
+escape ('\x0327':cs)    = '\BS' : ',' : escape cs
 escape (c:cs)
     | isAscii c     = c : escape cs
 -- The LetterMaster only supports ASCII, so we'll error for other characters.
@@ -114,12 +142,7 @@ showHelp = mapM_ putStrLn [
 
 magick :: Int -> IO ()
 magick cs = do
-    uncleanScroll <- getContents
-    let dissectedScroll = parseBBCode uncleanScroll
-    let bedeviledScroll = toDiablo dissectedScroll
-    let wordbrokeScroll = wrap cs bedeviledScroll
-    let completedScroll = escape wordbrokeScroll
-    putStr completedScroll
+    putStr =<< escape . wrap cs . toDiablo . parseBBCode . decompose <$> getContents
 
 main :: IO ()
 main = do
